@@ -1,0 +1,193 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Spam Detector</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 50px;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .prediction-box {
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+        .spam {
+            background-color: #f8d7da;
+            border: 1px solid #f5c2c7;
+        }
+        .ham {
+            background-color: #d1e7dd;
+            border: 1px solid #badbcc;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card p-4 mb-4">
+            <h1 class="text-center mb-4">Email Spam Detector</h1>
+            
+            <form id="spam-detector-form">
+                <div class="mb-3">
+                    <label for="email-content" class="form-label">Email Content</label>
+                    <textarea class="form-control" id="email-content" name="email_content" rows="6" required></textarea>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Check if Spam</button>
+                </div>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Analyzing email...</p>
+            </div>
+            
+            <div class="prediction-box" id="prediction-box">
+                <h4 id="prediction-title">Prediction: </h4>
+                <p id="prediction-text"></p>
+                <div class="progress mt-3" id="confidence-bar-container">
+                    <div id="confidence-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p class="mt-2" id="confidence-text"></p>
+            </div>
+        </div>
+        
+        <div class="card p-4">
+            <h3 class="mb-3">How it works</h3>
+            <p>This spam detector uses machine learning to classify emails as spam or legitimate (ham). The model has been trained on thousands of emails and uses natural language processing techniques to identify patterns common in spam messages.</p>
+            
+            <h5 class="mt-3">Features used to detect spam:</h5>
+            <ul>
+                <li>Suspicious keywords and phrases</li>
+                <li>Unusual formatting patterns</li>
+                <li>Presence of urgency or pressure tactics</li>
+                <li>Unsolicited offers or promotions</li>
+                <li>Text-to-link ratio</li>
+            </ul>
+            
+            <p class="mt-3"><strong>Note:</strong> While this detector is accurate in many cases, no spam filter is perfect. Always use your judgment when evaluating emails.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('spam-detector-form');
+            const loading = document.getElementById('loading');
+            const predictionBox = document.getElementById('prediction-box');
+            const predictionTitle = document.getElementById('prediction-title');
+            const predictionText = document.getElementById('prediction-text');
+            const confidenceBar = document.getElementById('confidence-bar');
+            const confidenceText = document.getElementById('confidence-text');
+            const confidenceBarContainer = document.getElementById('confidence-bar-container');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Show loading indicator
+                loading.style.display = 'block';
+                predictionBox.style.display = 'none';
+                
+                // Get form data
+                const formData = new FormData(form);
+                
+                // Send request
+                fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading indicator
+                    loading.style.display = 'none';
+                    
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // Display prediction
+                    predictionBox.style.display = 'block';
+                    
+                    if (data.prediction === 'spam') {
+                        predictionBox.className = 'prediction-box spam';
+                        predictionTitle.textContent = 'Prediction: SPAM';
+                        predictionText.textContent = 'This email has been classified as spam and may contain suspicious content.';
+                        confidenceBar.className = 'progress-bar bg-danger';
+                    } else {
+                        predictionBox.className = 'prediction-box ham';
+                        predictionTitle.textContent = 'Prediction: NOT SPAM';
+                        predictionText.textContent = 'This email appears to be legitimate.';
+                        confidenceBar.className = 'progress-bar bg-success';
+                    }
+                    
+                    // Display confidence if available
+                    if (data.confidence !== null) {
+                        const confidencePercent = data.prediction === 'spam' ? 
+                            data.confidence * 100 : 
+                            (1 - data.confidence) * 100;
+                        
+                        confidenceBar.style.width = confidencePercent + '%';
+                        confidenceText.textContent = `Confidence: ${confidencePercent.toFixed(2)}%`;
+                        confidenceBarContainer.style.display = 'flex';
+                        confidenceText.style.display = 'block';
+                    } else {
+                        confidenceBarContainer.style.display = 'none';
+                        confidenceText.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    alert('An error occurred: ' + error);
+                });
+            });
+            
+            // Add some example emails
+            const exampleSpam = document.createElement('button');
+            exampleSpam.className = 'btn btn-sm btn-outline-danger mt-2 me-2';
+            exampleSpam.textContent = 'Try Spam Example';
+            exampleSpam.addEventListener('click', function() {
+                document.getElementById('email-content').value = 'URGENT: You have WON a $1,000 gift card! Click here to claim your PRIZE now! Limited time offer, act FAST! www.claim-prize.com';
+            });
+            
+            const exampleHam = document.createElement('button');
+            exampleHam.className = 'btn btn-sm btn-outline-success mt-2';
+            exampleHam.textContent = 'Try Legitimate Example';
+            exampleHam.addEventListener('click', function() {
+                document.getElementById('email-content').value = 'Hi Sarah, Just following up on our meeting yesterday. I have attached the revised proposal with the changes we discussed. Let me know if you need anything else before Friday. Best regards, John';
+            });
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'mt-2';
+            buttonContainer.appendChild(exampleSpam);
+            buttonContainer.appendChild(exampleHam);
+            
+            document.querySelector('.mb-3').appendChild(buttonContainer);
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
