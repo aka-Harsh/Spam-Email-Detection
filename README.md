@@ -66,6 +66,9 @@ Open your web browser and navigate to: http://127.0.0.1:5000/
 ---
 ## 🔭 Project Outlook
 
+![Image](https://github.com/user-attachments/assets/0950018c-e51b-4ac1-8107-58440dd47738)
+![Image](https://github.com/user-attachments/assets/6b02098a-368c-49dc-b9f7-430e705f8d5e)
+![Image](https://github.com/user-attachments/assets/723f352e-a67c-4805-a3ae-ed842b2ffab7)
 
 ---
 
